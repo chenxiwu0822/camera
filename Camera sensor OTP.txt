@@ -1,0 +1,28 @@
+/////////////////////////////////////////////
+// Camera sensor OTP相关问题
+/////////////////////////////////////////////
+1. Camera sensor OTP是一个实实在在的器件吗？OTP到底是什么？
+
+2.各个sensor厂商的sensor的OTP存储的参数类别有什么不同？ 
+	比如 ov的sensor中包括module integrator id和 awb修正参数、lens shading（逆光）修正参数，PDAF校准，OIS校准信息。
+3.OTP数据的存储方式有什么不同？ 
+	比如 ov的数据存储两部分
+
+4. 现在所有的Camera sensor 厂商都使用OTP？
+
+
+
+郑飛，camera工程师， 编辑于 2014-11-09：
+OTP one time programming： sensor内存自带的不可擦除的存储rom，
+
+用途： 减小各个sensor，模组间的差异。
+
+主要记录的信息有 shading，awb，vcm motor，module basic info，还会有一些PDAF校准，OIS校准信息，后期会在模组调试中利用其内容调试。
+现在sensor内部otp一般比较小，写坏两至三次sensor就废了。后置大像素的camera模组一般外挂eeprom（SONY的sensor就是！）。
+OTP 可以校正 module 组装的误差。
+
+
+
+
+
+

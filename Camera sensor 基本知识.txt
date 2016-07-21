@@ -1,0 +1,735 @@
+Camera sensor 基本知识
+
+2013-08-15 14:30 972人阅读
+
+
+一、Camera 结构/工作原理介绍
+
+
+
+1．结构：
+一般来说，camera 主要是由 lens 和 sensor IC 两部分组成，其中有的 sensor IC 集成了 DSP，有的没有集成，但也需要外部 DSP 处理。细分的来讲，camera 设备由下边几部 分构成：
+
+ 1） lens（镜头）：
+    一般 camera 的镜头结构是由几片透镜组成，分有塑胶透镜（Plastic)和玻璃透镜(Glass)，通常镜头结构有：1P,2P,1G1P,1G3P,2G2P,4G等。
+ 2） sensor（图像传感器）：
+    Senor 是一种半导体芯片，有两种类型：CCD 和 CMOS。Sensor 将从 lens 上传导过来的光线转换为电信号， 再通过内部的 AD 转换为数字信号。
+    由于 Sensor 的每个 pixel 只能感光 R光 或者 B光 或者 G光， 因此每个像素此时存贮的是单色的， 我们称之为 RAW DATA 数据。 
+    要想将每个像素的 RAW DATA 数据还原成三基色，就需要 ISP 来处理。 
+3）ISP（图像信号处理）：
+    主要完成数字图像的处理工作，把 sensor 采集到的原始数据转换为显示支持的格式。 
+4）CAMIF（camera 控制器）：
+    芯片上的 camera 接口电路，对设备进行控制，接收 sensor 采集的数据交给CPU，并送入 LCD 进行显示。
+
+
+
+
+
+2．工作原理：
+    外部光线穿过 lens 后， 经过 color filter 滤波后照射到 Sensor 面上， Sensor 将从 lens 上传导过来的光线转换为电信号，再通过内部的 AD 转换为数字信号。
+    如果 Sensor 没有集成DSP，则通过DVP的方式传输到 baseband，此时的数据格式是 RAW DATA。
+    如果 Sensor 集成了DSP， RAW DATA 数据经过 AWB、color matrix、lens shading、gamma、sharpness、AE 和 de-noise 处理，后输出 YUV 或者 RGB 格式的数据。
+    最后会由 CPU 送到 framebuffer 中进行显示，这样我们就看到 camera 拍摄到的景象了。
+
+
+
+
+3． YUV 与 YCbCr
+YUV 和 RGB 一样，是色彩空间中常用的色彩模型之一，两者可以相互转换。
+YUV 中的 Y 表示亮度，U 和 V 表示色度。
+
+与 RGB 相比，它的优点在于占用更少的空间。 
+YCbCr 则是在世界数字组织视频标准研制过程中作为 ITU-RBT601 建议的一部分, 其实是 YUV 经过缩放和偏移的翻版。 
+其中 Y 与 YUV 中的 Y 含义一致, Cb, Cr 同样都指色彩, 只是在表示方法上不同而已。
+在 YUV 家族中, YCbCr 是在计算机系统中应用最多的成员, 其应用领域很广泛, JPEG、 MPEG均采用此格式。 
+一般人们所讲的 YUV 大多是指 YCbCr。 YCbCr 有许多取样格式, 如 4∶4∶4 , 4∶2∶2 , 4∶1∶1 和 4∶2∶0。
+
+
+
+
+
+二、Camera 硬件
+1． CAMIF
+如下是 S5PV210 的 camera 系统的结构图：    略...
+
+S5PV210 的 camera 接口控制器叫 FIMC4.3，它支持 ITU RBT-601/656、AXI 和 MIPI(CSI)三种接口方式，最大输入像素是 8192*8192。
+S5PV210 有三组 camera 接口。
+
+主要特性： 支持多种输入接口类型：
+
+
+ITU-R BT 601/656 模式 DMA(AXI 64 位)模式 MIPI(CSI)模式 Direct FIFO 模式 支持多种输出接口：DMA 模式/Direct FIFO 模式 支持数码调焦（DZI） 最大输入像素 8192*8192 支持图像翻转、旋转等处理效果 生成多种图片格式 支持采集帧控制
+
+2． 接口信号 ．
+FIMC 信号定义如下所示(YCbCr 模式)
+
+Signal
+
+VSYNC HREF PCLK DATA[7:0] FIELD CAM_MCLK I I I I
+
+
+I/O
+帧同步信号 行同步信号 像素时钟 像素数据 FIELD 信号
+
+Description
+
+Type
+
+Muxed
+
+O O
+
+系统时钟信号
+
+
+
+
+通过 CAM_MCLK 给摄像头提供时钟，RST 是复位线，PWDN 在摄像头工作时应该始终 为低。HREF 是行参考信号，PCLK 是像素时钟，VSYNC 是场同步信号。一旦给摄像头提供了 时钟，并且复位摄像头，摄像头就开始工作了，通过 HREF，PCLK 和 VSYNC 同步传输数字图 像信号。数据是通过 DATA0~DATA7 这八根数据线并行送出的。
+
+3． 工作时序 ．
+FIMC43 支持如下两种视频数据：
+
+ITU-R BT 601 输入时序图 这种方式下行和帧同步信号独立于视频数据，因此需要同步信号。
+
+
+
+
+ITU-R BT 656 输入时序图
+
+
+这种方式下同步信号已经内嵌到视频数据中了，因此不需要额外的行和帧同步信号。
+
+（ITU-R BT 601: 16 位数据传输；21 芯；Y、U、V 信号同时传输。 ITU-R BT 656: 9 芯，不需要同步信号；8 位数据传输；串行视频传输；传输速率是 601 的 2 倍；先传 Y， 后传 UV。 ）
+
+同步信号的时延参数 t1：表示 VSYNC 前、后插入周期 t2：表示 HREF 前插入周期 t3：表示 HREF 宽度 t4：表示 HREF 后插入周期
+
+
+
+
+4． 外部接口 ． 外部接口
+硬件原理图的 CAM A 部分：
+
+CAM B 部分
+
+5． Camera 内部结构图 ．
+下图是 camera 内部结构框图，以 OV sensor 为例：
+
+三、Camera 驱动
+1． V4L2 ．
+1）简介 ） 在 Linux 中，摄像头方面的标准化程度比较高，这个标准就是 V4L2 驱动程序，这也是 业界比较公认的方式。 V4L 全称是 Video for Linux，是 Linux 内核中标准的关于视频驱动程序，目前使用比 较多的版本是 Video for Linux 2， 简称 V4L2。 它为 Linux 下的视频驱动提供了统一的接口， 使得应用程序可以使用统一的 API 操作不同的视频设备。从内核空间到用户空间，主要的 数据流和控制类均由 V4L2 驱动程序的框架来定义。 V4L2 驱动程序一般只提供 Video 数据的获得，而如何实现视频预览，如何向上层发送 数据，如何把纯视频流和取景器、视频录制等实际业务组织起来，都是 camera 的硬件抽象 层需要负责的工作。
+
+ V4L2 驱动核心实现为如下文件：drivers/media/video/v4l2-dev.c。 V4l2-dev.h 中定义的 video_device 是 V4L2 驱动程序的核心数据结构，它为具体的摄 像头 sensor 驱动提供了接口调用。 V4l2 的采集过程（应用程序）：
+
+1)打开设备，获得文件描述符； 
+
+2) 设置图片格式；
+
+3) 分配缓冲区；
+
+4)启动采集过程，读取数据；
+
+5) 停止采集，关闭设备。
+
+
+2）数据结构 ）
+
+ V4L2 的主要数据结构是 video_device，定义在 v4l2_dev.h 中：
+
+struct video_device { 
+
+/* device ops */ 
+
+const struct v4l2_file_operations *fops; /*接口函数指针*/
+
+
+/* sysfs */
+
+ struct device dev; struct cdev *cdev; /* v4l 设备结构 */ 
+
+/* 字符设备结构*/
+
+
+/* Set either parent or v4l2_dev if your driver uses v4l2_device */ 
+
+struct device *parent; struct v4l2_device *v4l2_dev; /* 设备父指针 */
+
+/* v4l2 设备指针*/
+
+
+/* device info */ 
+
+char name[32]; 
+
+int vfl_type; /* 'minor' is set to -1 if the registration failed */ 
+
+int minor; u16 num; /* use bitops to set/clear/test flags */ 
+
+unsigned long flags; /* attribute to differentiate multiple indices on one physical device */ 
+
+int index; /*次设备号*/ 
+
+/*设备名称*/
+
+
+/* V4L2 file handles */ 
+
+spinlock_t fh_lock; /* Lock for all v4l2_fhs */
+
+
+struct list_head fh_list; /* List of struct v4l2_fh */
+
+int debug;
+
+/* debug 级别*/
+
+/* Video 标准变量 */ 
+
+v4l2_std_id tvnorms; /* Supported tv norms */
+
+
+v4l2_std_id current_norm; /* Current tvnorm */
+
+/* 回调函数 */ 
+
+void (*release)(struct video_device *vdev);
+
+
+/* ioctl 回调函数 */ 
+
+const struct v4l2_ioctl_ops *ioctl_ops; 
+
+};
+
+
+主要接口函数有： int video_register_device(struct video_device *vdev, int type, int nr)；
+
+static int v4l2_ioctl(struct inode *inode, struct file *filp, long arg)；
+
+unsigned int cmd, unsigned
+
+2. FIMC
+1）简介 ） FIMC 这个模块不仅仅是一个摄像头的控制接口，它还承担着 V4L2 的 output 功能和 overlay 的功能。 FIMC 的驱动在内核中的位置：drivers/media/video/samsung/fimc 它包含下边的文件：
+fimc_regs.c fimc_capture.c fimc_dev.c fimc_output.c fimc_overlay.c fimc_v4l2.c
+
+它们的组织关系如下：
+
+可以看到，FIMC 的驱动实现了 v4l2 所有的接口，可以分为 v4l2-input 设备接口， v4l2-output 设备接口以及 v4l2-overlay 设备接口。这里我们主要关注 v4l2-input 设备接口， 因为摄像头属于视频输入设备。 fimc_v4l2.c 里面注册了很多的回调函数，都是用于实现 v4l2 的标准接口的，但是这些 回调函数基本上都不是在 fimc_v4l2.c 里面实现的，而是有相应的.c 分别去实现。比如：
+
+v4l2-input 设备的操作实现： fimc_capture.c v4l2-output 
+
+设备的操作实现： fimc_output.c v4l2-overlay 
+
+设备的操作实现： fimc_overlay.c
+
+
+这些代码其实都是和具体硬件操作无关的， 这个驱动把所有操作硬件寄存器的代码都写 到一个文件里面了，就是 fimc40_regs.c。这样把硬件相关的代码和硬件无关的代码分开来 实现是非常好的方式，可以最大限度的实现代码复用。
+
+ 2） 数据结构 ） FIMC 的主要数据结构 fimc_control，定义在 fimc.h 中：
+
+
+
+struct fimc_control {
+        int                             id;             /* controller id */
+        char                            name[16];
+        atomic_t                        in_use;
+        void __iomem                    *regs;          /* register i/o */
+        struct clk                      *clk;           /* interface clock */
+        struct regulator        *regulator;             /* pd regulator */
+        struct fimc_meminfo             mem;            /* for reserved mem */
+
+
+        /* kernel helpers */
+        struct mutex                    lock;           /* controller lock */
+        struct mutex                    alloc_lock;
+        struct mutex                    v4l2_lock;
+        wait_queue_head_t               wq;
+        struct device                   *dev;
+        int                             irq;
+
+
+        /* v4l2 related */
+        struct video_device             *vd;
+        struct v4l2_device              v4l2_dev;
+
+
+        /* fimc specific */
+        struct fimc_limit               *limit;         /* H/W limitation */
+        struct s3c_platform_camera      *cam;           /* activated camera */
+        struct fimc_capinfo             *cap;           /* capture dev info */
+        struct fimc_outinfo             *out;           /* output dev info */
+        struct fimc_fbinfo              fb;             /* fimd info */
+        struct fimc_scaler              sc;             /* scaler info */
+        struct fimc_effect              fe;             /* fimc effect info */
+
+
+        enum fimc_status                status;
+        enum fimc_log                   log;
+
+
+        u32                             ctx_busy[FIMC_MAX_CTXS];
+};
+
+
+
+因为 FIMC 一共有三套一样的控制器（fimc0, fimc1, fimc2） ，所以驱动里使用了一个数组来描述：： 
+
+struct video_device fimc_video_device[FIMC_DEVICES] = { 
+
+[0] = { .fops = &fimc_fops, .ioctl_ops = &fimc_v4l2_ops, .release = fimc_vdev_release, }, 
+
+[1] = { .fops = &fimc_fops, .ioctl_ops = &fimc_v4l2_ops, .release = fimc_vdev_release, }, 
+
+[2] = { .fops = &fimc_fops, .ioctl_ops = &fimc_v4l2_ops, .release = fimc_vdev_release, }, 
+
+};
+
+
+fb_ops 结构体是针对 v4l2 设备的基本操作，定义如下：
+static const struct v4l2_file_operations fimc_fops = { 
+
+            .owner  = THIS_MODULE,
+
+             .open = fimc_open, 
+
+             .release  = fimc_release,
+
+             .ioctl = video_ioctl2,
+
+             .read = fimc_read,
+
+             .write = fimc_write,
+
+             .mmap = fimc_mmap,
+
+             .poll = fimc_poll,
+
+}; 
+
+3）FIMC 初始设置 
+
+） 在 S5PV210 中， FIMC 初始设置代码在 /drivers/ arch/arm/mach-s5pv210/mach-t34h.c 中：
+
+static struct s3c_platform_fimc fimc_plat_lsi = {
+        .srclk_name     = "mout_mpll",
+        .clk_name       = "sclk_fimc",
+        .lclk_name      = "sclk_fimc_lclk",
+        .clk_rate       = 166750000,
+#if defined(CONFIG_VIDEO_S5K4EA)
+        .default_cam    = CAMERA_CSI_C,
+#else
+#ifdef CAM_ITU_CH_A
+        .default_cam    = CAMERA_PAR_A,
+#else
+        .default_cam    = CAMERA_PAR_B,
+#endif
+#endif
+        .camera         = {
+#ifdef CONFIG_VIDEO_S5K4ECGX
+                        &s5k4ecgx,
+#endif
+#ifdef CONFIG_VIDEO_S5KA3DFX
+                        &s5ka3dfx,
+#endif
+#ifdef CONFIG_VIDEO_S5K4BA
+                        &s5k4ba,
+#endif
+#ifdef CONFIG_VIDEO_S5K4EA
+                        &s5k4ea,
+#endif
+#ifdef CONFIG_VIDEO_HM2055
+                        &hm2055,
+#endif
+#ifdef CONFIG_VIDEO_GC0308
+                        &gc0308,
+#endif
+#ifdef CONFIG_VIDEO_HIMAX2055
+                        &himax2055,
+#endif
+#ifdef CONFIG_VIDEO_ADV7181
+                        &adv7181,
+#endif
+        },
+        .hw_ver         = 0x43,
+};
+
+
+
+
+对于 GPIO 的配置代码在 /drivers/ arch/arm/mach-s5pv210/setup-fimc0.c 中：
+void s3c_fimc0_cfg_gpio(struct platform_device *pdev) { 
+
+int i = 0;
+
+
+/* CAM A port(b0010) : PCLK, VSYNC, HREF, DATA[0-4] */ 
+
+for (i = 0; i < 8; i++) { 
+
+s3c_gpio_cfgpin(S5PV210_GPE0(i), S3C_GPIO_SFN(2)); 
+
+s3c_gpio_setpull(S5PV210_GPE0(i), S3C_GPIO_PULL_NONE);
+
+ } 
+
+/* CAM A port(b0010) : DATA[5-7], CLKOUT(MIPI CAM also), FIELD */ 
+
+
+
+for (i = 0; i < 5; i++) { 
+
+s3c_gpio_cfgpin(S5PV210_GPE1(i), S3C_GPIO_SFN(2)); 
+
+s3c_gpio_setpull(S5PV210_GPE1(i), S3C_GPIO_PULL_NONE); 
+
+} /* CAM B port(b0011) : DATA[0-7] */ 
+
+
+
+for (i = 0; i < 8; i++) { 
+
+s3c_gpio_cfgpin(S5PV210_GPJ0(i), S3C_GPIO_SFN(3));
+
+ s3c_gpio_setpull(S5PV210_GPJ0(i), S3C_GPIO_PULL_NONE); 
+
+} /* CAM B port(b0011) : PCLK, VSYNC, HREF, FIELD, CLCKOUT */ 
+
+
+
+for (i = 0; i < 5; i++) { 
+
+s3c_gpio_cfgpin(S5PV210_GPJ1(i), S3C_GPIO_SFN(3)); 
+
+s3c_gpio_setpull(S5PV210_GPJ1(i), S3C_GPIO_PULL_NONE); 
+
+} }
+
+
+4）接口函数 ） 
+
+FIMC 的主要回调函数如下，实现在 fimc_v4l2.c 中：
+
+
+const struct v4l2_ioctl_ops fimc_v4l2_ops = {
+        .vidioc_querycap                = fimc_querycap,
+        .vidioc_reqbufs                 = fimc_reqbufs,
+        .vidioc_querybuf                = fimc_querybuf,
+        .vidioc_g_ctrl                  = fimc_g_ctrl,
+        .vidioc_s_ctrl                  = fimc_s_ctrl,
+        .vidioc_s_ext_ctrls             = fimc_s_ext_ctrls,
+        .vidioc_cropcap                 = fimc_cropcap,
+        .vidioc_g_crop                  = fimc_g_crop,
+        .vidioc_s_crop                  = fimc_s_crop,
+        .vidioc_streamon                = fimc_streamon,
+        .vidioc_streamoff               = fimc_streamoff,
+        .vidioc_qbuf                    = fimc_qbuf,
+        .vidioc_dqbuf                   = fimc_dqbuf,
+        .vidioc_enum_fmt_vid_cap        = fimc_enum_fmt_vid_capture,
+        .vidioc_g_fmt_vid_cap           = fimc_g_fmt_vid_capture,
+        .vidioc_s_fmt_vid_cap           = fimc_s_fmt_vid_capture,
+        .vidioc_try_fmt_vid_cap         = fimc_try_fmt_vid_capture,
+        .vidioc_enum_input              = fimc_enum_input,
+        .vidioc_g_input                 = fimc_g_input,
+        .vidioc_s_input                 = fimc_s_input,
+        .vidioc_g_parm                  = fimc_g_parm,
+        .vidioc_s_parm                  = fimc_s_parm,
+        .vidioc_queryctrl               = fimc_queryctrl,
+        .vidioc_querymenu               = fimc_querymenu,
+        .vidioc_g_fmt_vid_out           = fimc_g_fmt_vid_out,
+        .vidioc_s_fmt_vid_out           = fimc_s_fmt_vid_out,
+        .vidioc_try_fmt_vid_out         = fimc_try_fmt_vid_out,
+        .vidioc_g_fbuf                  = fimc_g_fbuf,
+        .vidioc_s_fbuf                  = fimc_s_fbuf,
+        .vidioc_try_fmt_vid_overlay     = fimc_try_fmt_overlay,
+        .vidioc_g_fmt_vid_overlay       = fimc_g_fmt_vid_overlay,
+        .vidioc_s_fmt_vid_overlay       = fimc_s_fmt_vid_overlay,
+};
+                                                              
+
+
+5）寄存器操作（fimc_regs.c） ）寄存器操作（ ）
+
+对于寄存器的操作，实现都在 fimc_regs.c 文件中，如
+int fimc_hwset_camera_source(struct fimc_control *ctrl) {
+
+
+
+ struct s3c_platform_camera *cam = ctrl->cam; u32 cfg = 0;
+
+
+cfg |= S3C_CISRCFMT_ITU601_8BIT; cfg |= cam->order422;
+
+if (cam->type == CAM_TYPE_ITU)
+
+cfg |= cam->fmt;
+
+cfg |= S3C_CISRCFMT_SOURCEHSIZE(cam->width); 
+
+cfg |= S3C_CISRCFMT_SOURCEVSIZE(cam->height);
+
+
+writel(cfg, ctrl->regs + S3C_CISRCFMT);
+
+return 0; 
+
+}
+
+
+int fimc_hwset_enable_irq(struct fimc_control *ctrl, int overflow, int level) { 
+
+u32 cfg = readl(ctrl->regs + S3C_CIGCTRL);
+
+
+cfg &= ~(S3C_CIGCTRL_IRQ_OVFEN | S3C_CIGCTRL_IRQ_LEVEL); 
+
+cfg |= S3C_CIGCTRL_IRQ_ENABLE;
+
+
+if (overflow) cfg |= S3C_CIGCTRL_IRQ_OVFEN;
+
+if (level) cfg |= S3C_CIGCTRL_IRQ_LEVEL;
+
+writel(cfg, ctrl->regs + S3C_CIGCTRL);
+
+return 0; 
+
+}
+
+
+3. Sensor 驱动
+1）简介, 
+
+）简介 本方案中使用了两个摄像头模组： MT9P111 和 S5K6AAFX。 其中 MT9P111 是 APTINA 公司推出的 1/4 英寸光学格式 5M 单芯片传感器，用作后摄像头；S5K6AAFX 是三星出的 1.3M CMOS 高清图像传感器，用作前摄像头。 
+
+2）参数设置 
+
+）参数设置 MT9P111 的参数设置
+
+#ifdef MT9P111_ENABLED 
+
+static struct mt9p111_platform_data mt9p111_plat = { 
+
+.default_width = 1024, 
+
+.default_height = 600, 
+
+.pixelformat = V4L2_PIX_FMT_UYVY, 
+
+.freq = 24000000, 
+
+.is_mipi = 0, 
+
+}; 
+
+
+
+static struct i2c_board_info mt9p111_i2c_info = { 
+
+I2C_BOARD_INFO("MT9P111", 0x3D),//0x7a,0x7b .
+
+platform_data = &mt9p111_plat, 
+
+}; 
+
+
+
+static struct s3c_platform_camera mt9p111 = { 
+
+.id = CAMERA_PAR_A,
+
+.type= CAM_TYPE_ITU,
+
+.fmt =  = ITU_601_YCBCR422_8BIT,
+
+
+.order422 = CAM_ORDER422_8BIT_CBYCRY, 
+
+.i2c_busnum 
+
+.info = 7,
+
+
+= &mt9p111_i2c_info, = V4L2_PIX_FMT_UYVY, = "xusbxti",
+
+.pixelformat .srclk_name
+
+.clk_name = "sclk_cam0",
+
+.clk_rate = 24000000,
+
+.line_length 
+
+.width 
+
+.height
+
+.window 
+
+.left = 0, 
+
+.top = 0, 
+
+.width 
+
+.height 
+
+}, = 1024, = 600, = 1920, = 1024, = 600, ={
+
+
+/* Polarity */ .inv_pclk = 0, .inv_vsync .inv_href = 0, .inv_hsync = 0, = 0,
+
+.initialized = 0, .cam_power }; #endif = smdkv210_cam0_power,
+
+S5K6AAFX 的参数设置
+#ifdef S5K6AAFX_ENABLED 
+
+static struct s5k6aafx_platform_data s5k6aafx_plat = { 
+
+.default_width = 800, 
+
+.default_height = 600,
+
+ .pixelformat = V4L2_PIX_FMT_YUYV, 
+
+.freq = 24000000,
+
+
+.is_mipi = 0, 
+
+}; 
+
+static struct i2c_board_info s5k6aafx_i2c_info = {
+
+
+I2C_BOARD_INFO("s5k6aafx", 0x3c), 
+
+.platform_data = &s5k6aafx_plat,
+
+ }; 
+
+
+
+static struct s3c_platform_camera s5k6aafx = { 
+
+.id 
+
+.type 
+
+.fmt = CAMERA_PAR_B, = CAM_TYPE_ITU, = ITU_601_YCBCR422_8BIT,
+
+
+.order422 = CAM_ORDER422_8BIT_YCBYCR, .i2c_busnum .info = 4,
+
+= &s5k6aafx_i2c_info, = V4L2_PIX_FMT_YUYV, = "xusbxti",
+
+.pixelformat .srclk_name
+
+.clk_name = "sclk_cam1", .clk_rate = 24000000, .line_length = 1280,
+
+/* default resol for preview kind of thing */ 
+
+.width .height 
+
+.window .left = 0, 
+
+.top = 0, .width 
+
+.height }, /* Polarity */
+
+ .inv_pclk = 0, 
+
+.inv_vsync = 0, = 800, = 600, = 800, = 600, ={
+
+
+.inv_href = 0, 
+
+.inv_hsync = 0,
+
+
+.initialized = 0, 
+
+.cam_power }; 
+
+#endif = smdkv210_cam1_power,
+
+
+3）数据结构 ）
+
+（未注释）
+struct v4l2_subdev { 
+
+struct list_head list; 
+
+struct module *owner; 
+
+u32 flags; 
+
+struct v4l2_device *v4l2_dev; 
+
+const struct v4l2_subdev_ops *ops; /* name must be unique */ 
+
+char name[V4L2_SUBDEV_NAME_SIZE]; /* can be used to group similar subdevs, value is driver-specific */ 
+
+u32 grp_id; /* pointer to private data */ 
+
+void *priv;
+
+ }; 
+
+#endif
+
+
+4）接口函数 ）
+
+（未注释）
+static const struct v4l2_subdev_core_ops mt9p111_core_ops = { 
+
+.init = mt9p111_init, /* initializing API */
+
+
+.s_config = mt9p111_s_config, /* Fetch platform data */ 
+
+.queryctrl = mt9p111_queryctrl, 
+
+.querymenu = mt9p111_querymenu,
+
+ .g_ctrl = mt9p111_g_ctrl, 
+
+.s_ctrl = mt9p111_s_ctrl,
+
+ };
+
+
+static const struct v4l2_subdev_video_ops mt9p111_video_ops = { 
+
+// .s_crystal_freq = mt9p111_s_crystal_freq, 
+
+.g_fmt = mt9p111_g_fmt, 
+
+.s_fmt = mt9p111_s_fmt,
+
+ .enum_framesizes = mt9p111_enum_framesizes, // //
+
+ .enum_frameintervals = mt9p111_enum_frameintervals, 
+
+.enum_fmt = mt9p111_enum_fmt, 
+
+.try_fmt = mt9p111_try_fmt, 
+
+.g_parm = mt9p111_g_parm, 
+
+.s_parm = mt9p111_s_parm, 
+
+.s_stream = mt9p111_s_stream, };
+
+
+static const struct v4l2_subdev_ops mt9p111_ops = { 
+
+.core = &mt9p111_core_ops, 
+
+.video = &mt9p111_video_ops, 
+
+};
+
+ #endif
+
+
