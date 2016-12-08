@@ -1,5 +1,6 @@
+///////////////////////////////////////////////
 CMOS Sensor 基础知识
-
+///////////////////////////////////////////////
 
 CMOS Parallel Sensor 一些基础知识
 1S秒 = 1000 ms毫秒 = 1000_1000 us微妙 = 1000_000_000 ns纳秒
@@ -17,7 +18,7 @@ Exp = T_Row * INT_Time // INT_Time 积分时间（曝光时间寄存器）
 2. Ob = Black Level 暗电流
 3. AE 主要控制Sensor Exp & Gain 这两种寄存器
 4. Sensor自带ISP，Mirror，Flip，WDR不做多的讲解
- 
+
 CMOS MIPI Sensor
 看数据线对数可以知道是N Lane 的Sensor
  
@@ -31,7 +32,11 @@ CMOS Hispi
 integration  time 积分时间
 当光源周期与integration time成整数倍时才不会产生flicker
 integration time即积分时间是以行为单位表示曝光时间（exposure time）的，比如说INT TIM为159，就是指sensor曝光时间为159行，
-两者所代表的意思是相同的，都是表示sensor的曝光时间，但是integration time是一个相对的概念，即以行为单位，而每行所占的绝对时间与pclk的时钟频率和每一行包含多少pclk（即行长）有关；而exposure time则是指sensor曝光的绝对时间，两者换算的关系如下：
+两者所代表的意思是相同的，都是表示sensor的曝光时间，
+但是integration time是一个相对的概念，即以行为单位，而每行所占的绝对时间与pclk的时钟频率和每一行包含多少pclk（即行长）有关；
+而exposure time则是指sensor曝光的绝对时间，
+
+两者换算的关系如下：
 exposure time = integration time x 行长 /pclk 频率
 
 光源周期应该理解为光源能量周期，是交流电周期的两倍（如交流电频率为50hz，则光源能量周期为0.01s)，步长所占绝对时间与光源能量周期相等。
