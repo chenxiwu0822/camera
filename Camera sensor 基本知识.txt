@@ -5,19 +5,25 @@ CMOS Sensor 基础知识
 CMOS Parallel Sensor 一些基础知识
 1S秒 = 1000 ms毫秒 = 1000_1000 us微妙 = 1000_000_000 ns纳秒
 1GHz = 1000 MHz = 1000_000 KHz = 1000_000_000 Hz
-曝光时间以行长为单位； PCLK以Hz为单位；
+
+曝光时间以行长为单位； 
+PCLK以Hz为单位；
 行长以周期数为单位，帧长以行长数为单位；其中周期数就是频率
-T 周期以ms为单位；f 频率以Hz为单位；f = 1 / T；周期和频率都是时间单位，只是表现形式不同
+T 周期以ms为单位；
+f 频率以Hz为单位； f = 1 / T；周期和频率都是时间单位，只是表现形式不同
+
 Vsync = Dummy Line = VTotal = VTS = V_Size + V_Blank   // 帧长;    不占用曝光时间，但是会影响帧率（FPS）
 Hsync = Dummy Pixel = HTotal = HTS = H_Size + H_Blank // 行长;    会增加曝光时间，会影响帧率（FPS）
 FPS = PCLK / （VTS * HTS ）// 计算FPS
-T_Row = HTS / PCLK  // INT_Time 等于 1 的时候，此公式表示一行的曝光时间。
-Exp = T_Row * INT_Time // INT_Time 积分时间（曝光时间寄存器）
+T_Row = HTS / PCLK         // INT_Time 等于 1 的时候，此公式表示一行的曝光时间。
+Exp = T_Row * INT_Time     // INT_Time 积分时间（曝光时间寄存器）
  
-1. 计算FPS可以通过修改 V_Total, H_Total 或者 降低 PCLK频率（当HTS or VTS降低到极限之后，需要通过降低PCLK来达到降FPS的目的） 达到降帧的目的。
+
+1. 降FPS可以通过修改 V_Total, H_Total 或者 降低 PCLK频率（当HTS or VTS降低到极限之后，需要通过降低PCLK来达到降FPS的目的） 达到降帧目的。
 2. Ob = Black Level 暗电流
 3. AE 主要控制Sensor Exp & Gain 这两种寄存器
-4. Sensor自带ISP，Mirror，Flip，WDR不做多的讲解
+4. Sensor有的自带ISP(ov的某些)，Mirror，Flip，WDR不做多的讲解
+
 
 CMOS MIPI Sensor
 看数据线对数可以知道是N Lane 的Sensor
@@ -26,7 +32,6 @@ CMOS Sub-LVDS Sensor
 看数据线对数可以知道是N Lane 的Sensor
  
 CMOS Hispi
- 
 
 补充：
 integration  time 积分时间
