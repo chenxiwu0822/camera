@@ -1,7 +1,45 @@
-Camera sensor 基本知识
+CMOS Sensor 基础知识
 
-2013-08-15 14:30 972人阅读
 
+CMOS Parallel Sensor 一些基础知识
+1S秒 = 1000 ms毫秒 = 1000_1000 us微妙 = 1000_000_000 ns纳秒
+1GHz = 1000 MHz = 1000_000 KHz = 1000_000_000 Hz
+曝光时间以行长为单位； PCLK以Hz为单位；
+行长以周期数为单位，帧长以行长数为单位；其中周期数就是频率
+T 周期以ms为单位；f 频率以Hz为单位；f = 1 / T；周期和频率都是时间单位，只是表现形式不同
+Vsync = Dummy Line = VTotal = VTS = V_Size + V_Blank   // 帧长;    不占用曝光时间，但是会影响帧率（FPS）
+Hsync = Dummy Pixel = HTotal = HTS = H_Size + H_Blank // 行长;    会增加曝光时间，会影响帧率（FPS）
+FPS = PCLK / （VTS * HTS ）// 计算FPS
+T_Row = HTS / PCLK  // INT_Time 等于 1 的时候，此公式表示一行的曝光时间。
+Exp = T_Row * INT_Time // INT_Time 积分时间（曝光时间寄存器）
+ 
+1. 计算FPS可以通过修改 V_Total, H_Total 或者 降低 PCLK频率（当HTS or VTS降低到极限之后，需要通过降低PCLK来达到降FPS的目的） 达到降帧的目的。
+2. Ob = Black Level 暗电流
+3. AE 主要控制Sensor Exp & Gain 这两种寄存器
+4. Sensor自带ISP，Mirror，Flip，WDR不做多的讲解
+ 
+CMOS MIPI Sensor
+看数据线对数可以知道是N Lane 的Sensor
+ 
+CMOS Sub-LVDS Sensor
+看数据线对数可以知道是N Lane 的Sensor
+ 
+CMOS Hispi
+ 
+
+补充：
+integration  time 积分时间
+当光源周期与integration time成整数倍时才不会产生flicker
+integration time即积分时间是以行为单位表示曝光时间（exposure time）的，比如说INT TIM为159，就是指sensor曝光时间为159行，
+两者所代表的意思是相同的，都是表示sensor的曝光时间，但是integration time是一个相对的概念，即以行为单位，而每行所占的绝对时间与pclk的时钟频率和每一行包含多少pclk（即行长）有关；而exposure time则是指sensor曝光的绝对时间，两者换算的关系如下：
+exposure time = integration time x 行长 /pclk 频率
+
+光源周期应该理解为光源能量周期，是交流电周期的两倍（如交流电频率为50hz，则光源能量周期为0.01s)，步长所占绝对时间与光源能量周期相等。
+flicker有两种情况，一种是逐行复位积分产生的，即帧内flicker，显示时图像出现明暗行交替的现象，主要是因为一帧内不同行虽然int tim 一致，但是因为积分起始位置不一样，且室内人工光源的发光强度与交流电的频率呈周期关系，导致不同行的受光量不一致，从而产生这种明暗行交替的现象，而且如果一帧所占时间不为光源能量周期的整数倍，可观察到flicker不稳定，明暗行的相对位置不断是变化的，就好像暗行在不断向上移动一样，如果能保证一帧所占绝对时间为光源能量周期的整数倍，filiker就可以稳定下来；
+另一种情况是整帧复位积分方式产生的，即视频浏览时，帧间闪烁，即不同帧明暗不一致，目前其消除方法是通过调节glb gain值来改善
+
+GLB GAIN就是全局增益，是调节图像的整体亮度的GAIN值，而R/B/G GAIN是AWB中用到的概念，针对三原色分别进行调节，是为了调整色偏用的
+--------------------------------------------------------------------------------------------------
 
 一、Camera 结构/工作原理介绍
 
