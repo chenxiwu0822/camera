@@ -1,0 +1,26 @@
+BME-HDR和SME-HDR区别
+
+
+BME 和 SME 都是 single frame 的？
+
+
+
+
+先导入电子快门的概念:
+感光芯片的电子快门和叶片快门不一样，电子快门就是逐行读sensor的数据，读完则曝光结束，所以当快门时间比较长，且在水平方向有快速运动物体就悲伤了。
+
+
+BME是 Binning Multiplexed Exposure. 
+SME是 Spatially Multiplexed Exposure.
+
+Binning 在图像处理里的意思就是将几个像素合成为一个像素，
+Spatially 在这里可以说成空间平面，
+Multiplexed是电路里的多路复用。
+
+
+
+BME的实现，是行方向的电子快门，通过控制通电时间，一行长曝光，一行短曝光，然后择优选一行，demosaic 后输出 bayer image，这样输出长宽等于缩了一半，譬如4000变2000，那么就变成binning.
+
+SME的实现，是从行方向的电子快门改成交错的电子快门，一行里有长曝光,有短曝光，然后 demosaic 出 bayer image, 这样保证了全分辨率高动态范围的输出，当然也能支持binning的输出。
+
+这就是BME和SME的区别。
